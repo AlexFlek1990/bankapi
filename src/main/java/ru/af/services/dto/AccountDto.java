@@ -7,13 +7,13 @@ import java.util.Objects;
 
 public class AccountDto {
     private long id;
-    private String cardHolder;
+    private String name;
     private BigDecimal balance;
     private List<CardDto> cards;
 
     public AccountDto(long id, String cardHolder) {
         this.id = id;
-        this.cardHolder = cardHolder;
+        this.name = cardHolder;
         this.balance = BigDecimal.ZERO;
         cards = new ArrayList<>();
     }
@@ -34,8 +34,8 @@ public class AccountDto {
         this.balance = balance;
     }
 
-    public String getCardHolder() {
-        return cardHolder;
+    public String getName() {
+        return name;
     }
 
     public List<CardDto> getCards() {
@@ -52,21 +52,21 @@ public class AccountDto {
         if (o == null || getClass() != o.getClass()) return false;
         AccountDto that = (AccountDto) o;
         return id == that.id &&
-                Objects.equals(cardHolder, that.cardHolder) &&
+                Objects.equals(name, that.name) &&
                 Objects.equals(balance, that.balance) &&
                 Objects.equals(cards, that.cards);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, cardHolder, balance, cards);
+        return Objects.hash(id, name, balance, cards);
     }
 
     @Override
     public String toString() {
         return "AccountDto{" +
                 "id=" + id +
-                ", cardHolder='" + cardHolder + '\'' +
+                ", cardHolder='" + name + '\'' +
                 ", balance=" + balance +
                 ", cards=" + cards +
                 '}';

@@ -10,7 +10,7 @@ public class CardDto {
     private String cardHolder;
     private BigDecimal limit;
 
-    public CardDto () {
+    public CardDto() {
         this.limit = BigDecimal.ZERO;
     }
 
@@ -26,6 +26,10 @@ public class CardDto {
 
     public BigDecimal getLimit() {
         return limit;
+    }
+
+    public String getCardHolder() {
+        return cardHolder;
     }
 
     public void setId(long id) {

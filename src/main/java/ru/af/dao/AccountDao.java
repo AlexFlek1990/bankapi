@@ -3,6 +3,7 @@ package ru.af.dao;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
+import org.hibernate.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import ru.af.mvc.models.Account;
@@ -45,6 +46,12 @@ public class AccountDao {
         Transaction t = session.beginTransaction();
         session.delete(account);
         t.commit();
+        session.close();
+    }
+
+    public void deleteAll(){
+        Session session = sessionFactory.openSession();
+        Query query = session.createQuery("delete from Account ");
         session.close();
     }
 }

@@ -2,6 +2,7 @@ package ru.af;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -14,11 +15,15 @@ import ru.af.dao.CardDao;
 import ru.af.mvc.models.Account;
 import ru.af.mvc.models.Card;
 import ru.af.services.AccountService;
+import ru.af.services.CardService;
 import ru.af.services.dto.AccountDto;
 import ru.af.services.dto.CardDto;
 import ru.af.services.dto.RechargeRequest;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -43,6 +48,15 @@ public class AccountTest {
     @Autowired
     private AccountService accountService;
 
+    @Autowired
+    private CardService cardService;
+
+    @BeforeEach
+    public void init(){
+        cardDao.deleteAll();
+        accountDao.deleteAll();
+    }
+
     @Test
     public void testCreateAccount() throws Exception {
         AccountDto account = new AccountDto(0, "test");
@@ -58,16 +72,21 @@ public class AccountTest {
         Account accountEntity = accountDao.findById(createdAccount.getId());
         Assertions.assertNotNull(accountEntity);
 
-        Assertions.assertEquals(account.getCardHolder(), accountEntity.getName());
+        Assertions.assertEquals(account.getName(), accountEntity.getName());
         Assertions.assertEquals(account.getBalance().longValue() * 100, accountEntity.getBalance());
     }
 
     @Test
     public void testAddCard() throws Exception {
+        Account account = new Account();
+        account.setName("test");
+        account.setBalance(0L);
+        long id = accountDao.save(account);
+        String url = "/accounts/" + id + "/cards";
         CardDto cardDto = new CardDto();
-        cardDto.setAccountId(2);
+        cardDto.setAccountId(id);
         MvcResult result = mockMvc.perform(
-                        post("/accounts/2/cards")
+                        post(url)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(cardDto)))
                 .andExpect(status().isOk()).andReturn();
@@ -82,50 +101,85 @@ public class AccountTest {
 
     @Test
     public void testRechargeBalance() throws Exception {
+        Account account = new Account();
+        account.setName("test");
+        account.setBalance(0L);
+        long id = accountDao.save(account);
+        String url = "/accounts/" + id +"/balance";
+        BigDecimal fund = new BigDecimal(10);
 
-        RechargeRequest request = new RechargeRequest(3, BigDecimal.TEN);
+        BigDecimal checkedBalance =
+                new BigDecimal(account.getBalance()).divide(new BigDecimal(100), 2, RoundingMode.DOWN).add(fund);
+        RechargeRequest request = new RechargeRequest(id, fund);
         MvcResult result = mockMvc.perform(
-                        post("/accounts/3/balance")
+                        post(url)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk()).andReturn();
         AccountDto accountDto = objectMapper.readValue(result.getResponse().getContentAsString(), AccountDto.class);
         Assertions.assertNotNull(accountDto);
 
-        Account accountFromDB = accountDao.findById(accountDto.getId());
-        Assertions.assertNotNull(accountFromDB);
-
-        Assertions.assertEquals(accountDto.getBalance().longValue() * 100, accountFromDB.getBalance());
+        Assertions.assertEquals(accountDto.getBalance(), checkedBalance);
     }
 
     @Test
     public void testGetBalance() throws Exception {
+        Account account = new Account();
+        account.setName("test");
+        account.setBalance(0L);
+        long id = accountDao.save(account);
+        String url = "/accounts/" + id +"/balance";
+        BigDecimal checkedBalance = new BigDecimal(accountDao.findById(id).getBalance()).divide(new BigDecimal(100), 2, RoundingMode.DOWN);
 
         MvcResult result = mockMvc.perform(
-                        get("/accounts/3/balance"))
+                        get(url))
                 .andExpect(status().isOk()).andReturn();
         BigDecimal balance = objectMapper.readValue(result.getResponse().getContentAsString(), BigDecimal.class);
         Assertions.assertNotNull(balance);
 
-        BigDecimal balanceFromDB = new BigDecimal(accountDao.findById(3).getBalance() / 100);
-        Assertions.assertNotNull(balanceFromDB);
-
-        Assertions.assertEquals(balance, balanceFromDB);
+        Assertions.assertEquals(balance, checkedBalance);
     }
 
     @Test
-    public void testGetCards() throws Exception {
+    public void testGetAccount() throws Exception {
+        Account account = new Account();
+        account.setName("test");
+        account.setBalance(0L);
+        long id = accountDao.save(account);
+        String url = "/accounts/" + id;
+        cardService.addCard(id);
+
         MvcResult result = mockMvc.perform(
-                        get("/accounts/1"))
+                        get(url))
                 .andExpect(status().isOk()).andReturn();
         AccountDto accountDto = objectMapper.readValue(result.getResponse().getContentAsString(),
                 AccountDto.class);
 
-        Account account = accountDao.findById(1);
-        Assertions.assertNotNull(account);
-
-        Assertions.assertEquals(accountDto, accountService.convertToDto(account));
+        Assertions.assertEquals(accountDto, accountService.convertToDto(accountDao.findById(id)));
     }
 
+    @Test
+    public void testGetCards() throws Exception{
+        Account account = new Account();
+        account.setName("test");
+        account.setBalance(0L);
+        long id = accountDao.save(account);
+        String url = "/accounts/" + id;
+        cardService.addCard(id);
+        cardService.addCard(id);
+        List<Card> cards = accountDao.findById(id).getCards();
+        List<CardDto> checkedList = new ArrayList<>();
+        for (Card card : cards) {
+            checkedList.add(cardService.convertToDto(card));
+        }
 
+        MvcResult result = mockMvc.perform(
+                        get(url))
+                .andExpect(status().isOk()).andReturn();
+        AccountDto accountDto = objectMapper.readValue(result.getResponse().getContentAsString(),
+                AccountDto.class);
+        List<CardDto> cardsDto = accountDto.getCards();
+
+        Assertions.assertEquals(checkedList, cardsDto);
+    }
 }

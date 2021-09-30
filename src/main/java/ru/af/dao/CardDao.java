@@ -60,4 +60,10 @@ public class CardDao {
         session.close();
         return cards;
     }
+
+    public void deleteAll(){
+        Session session = sessionFactory.openSession();
+        Query query = session.createQuery("delete from Card ");
+        session.close();
+    }
 }

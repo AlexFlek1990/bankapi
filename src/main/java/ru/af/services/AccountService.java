@@ -9,6 +9,7 @@ import ru.af.services.dto.AccountDto;
 import ru.af.services.dto.RechargeRequest;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 @Component
@@ -24,7 +25,8 @@ public class AccountService {
                 account.getId(),
                 account.getName()
         );
-        accountDto.setBalance(new BigDecimal(account.getBalance() / 100));
+        accountDto.setBalance(
+                new BigDecimal(account.getBalance()).divide(new BigDecimal(100), 2, RoundingMode.DOWN));
         List<Card> cards = account.getCards();
         for (Card card : cards) {
             accountDto.addCardDto(cardService.convertToDto(card));
@@ -34,13 +36,13 @@ public class AccountService {
 
     public Account convertFromDto(AccountDto accountDto) {
         Account account = new Account();
-        account.setName(accountDto.getCardHolder());
+        account.setName(accountDto.getName());
         account.setBalance(accountDto.getBalance().longValue() * 100);
         return account;
     }
 
     public AccountDto createAccount(AccountDto accountDto) {
-        Account account = new Account(accountDto.getCardHolder());
+        Account account = new Account(accountDto.getName());
         long id = save(account);
         account.setId(id);
         return convertToDto(account);
@@ -59,7 +61,8 @@ public class AccountService {
     }
 
     public String getBalance(long id) {
-        return new BigDecimal(findById(id).getBalance() / 100).toString();
+        return new BigDecimal(
+                findById(id).getBalance()).divide(new BigDecimal(100),2,RoundingMode.DOWN).toString();
     }
 
     public Account findById(long id) {
