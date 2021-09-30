@@ -52,7 +52,7 @@ public class AccountTest {
     private CardService cardService;
 
     @BeforeEach
-    public void init(){
+    public void init() {
         cardDao.deleteAll();
         accountDao.deleteAll();
     }
@@ -105,12 +105,12 @@ public class AccountTest {
         account.setName("test");
         account.setBalance(0L);
         long id = accountDao.save(account);
-        String url = "/accounts/" + id +"/balance";
+        String url = "/accounts/" + id + "/balance";
         BigDecimal fund = new BigDecimal(10);
 
         BigDecimal checkedBalance =
                 new BigDecimal(account.getBalance()).divide(new BigDecimal(100), 2, RoundingMode.DOWN).add(fund);
-        RechargeRequest request = new RechargeRequest(id, fund);
+        RechargeRequest request = new RechargeRequest( fund);
         MvcResult result = mockMvc.perform(
                         post(url)
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -119,7 +119,7 @@ public class AccountTest {
         AccountDto accountDto = objectMapper.readValue(result.getResponse().getContentAsString(), AccountDto.class);
         Assertions.assertNotNull(accountDto);
 
-        Assertions.assertEquals(accountDto.getBalance(), checkedBalance);
+        Assertions.assertEquals(checkedBalance, accountDto.getBalance());
     }
 
     @Test
@@ -128,7 +128,7 @@ public class AccountTest {
         account.setName("test");
         account.setBalance(0L);
         long id = accountDao.save(account);
-        String url = "/accounts/" + id +"/balance";
+        String url = "/accounts/" + id + "/balance";
         BigDecimal checkedBalance = new BigDecimal(accountDao.findById(id).getBalance()).divide(new BigDecimal(100), 2, RoundingMode.DOWN);
 
         MvcResult result = mockMvc.perform(
@@ -137,7 +137,7 @@ public class AccountTest {
         BigDecimal balance = objectMapper.readValue(result.getResponse().getContentAsString(), BigDecimal.class);
         Assertions.assertNotNull(balance);
 
-        Assertions.assertEquals(balance, checkedBalance);
+        Assertions.assertEquals(checkedBalance, balance);
     }
 
     @Test
@@ -159,7 +159,7 @@ public class AccountTest {
     }
 
     @Test
-    public void testGetCards() throws Exception{
+    public void testGetCards() throws Exception {
         Account account = new Account();
         account.setName("test");
         account.setBalance(0L);
